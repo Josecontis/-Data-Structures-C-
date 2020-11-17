@@ -1,0 +1,271 @@
+#ifndef BINTREE_LIST_H_
+#define BINTREE_LIST_H_
+
+#include "bintreenode.h"
+#include "bintree.h"
+#include <iostream>
+
+template <class T>
+class bintree_list : public bintree<T, bintreenode<T>*>{
+public:
+
+	typedef typename bintree<T, bintreenode<T>*>::value_type value_type;
+	typedef typename bintree<T, bintreenode<T>*>::Nodo Nodo;
+
+	bintree_list();
+	bintree_list(const bintree_list<T> &t);
+	bintree_list& operator=(const bintree_list<T> &t);
+
+	void create();
+	bool empty() const;
+
+	Nodo root() const;
+	Nodo parent(Nodo) const;
+	Nodo sx(Nodo) const;
+	Nodo dx(Nodo) const;
+	bool sx_empty(Nodo) const;
+	bool dx_empty(Nodo) const;
+
+	void erase(Nodo);
+
+	value_type read(Nodo) const;
+	void write(Nodo , value_type );
+
+	void ins_root(value_type);
+	void ins_sx(Nodo, value_type);
+	void ins_dx(Nodo, value_type);
+	void removeleft(bintreenode<T>* toremove);
+	void removeright(bintreenode<T>* toremove);
+	size_t getnonodes(){return nonodes;}
+	int getLivello(Nodo n){return n->level;}
+
+
+	void mirror(bintreenode<T>* n);
+	bool is_height_balanced(bintreenode<T>* root, int* height);
+
+
+private:
+	bintreenode<T>* _root;
+	size_t nonodes;
+	bintreenode<T>* copynode(const bintreenode<T>* tocopy, const bintreenode<T>* fa);
+	void removenode(bintreenode<T>* toremove);
+};
+
+template <class T>
+bintree_list<T>::bintree_list(){
+	_root=nullptr;
+	nonodes=0;
+}
+
+template <class T>
+bintree_list<T>::bintree_list(const bintree_list<T> &t){
+
+	nonodes=0;
+	_root=bintree_list<T>::copynode(t._root, nullptr);
+
+}
+
+template <class T>
+bintreenode<T>* bintree_list<T>::copynode(const bintreenode<T>* tocopy, const bintreenode<T>* fa){
+
+	if (tocopy==nullptr)
+		return nullptr;
+
+	bintreenode<T> *newnode=new bintreenode<T>;
+	newnode->father=fa;
+	newnode->value=tocopy->value;
+	newnode->Lchild=bintree_list<T>::copynode(tocopy->Lchild, tocopy);
+	newnode->Rchild=bintree_list<T>::copynode(tocopy->Rchild, tocopy);
+	nonodes++;
+	return newnode;
+
+}
+
+template <class T>
+bintree_list<T>& bintree_list<T>::operator=(const bintree_list<T> &t){
+
+	if (this!=&t){
+
+		_root->clear();
+		delete _root;
+		nonodes=0;
+		_root=bintree_list<T>::copynode(t._root, nullptr);
+
+	}
+
+}
+
+template <class T>
+void bintree_list<T>::create(){
+	if (!empty()){
+		_root->clear();
+	}
+	_root=nullptr;
+	_root->father=nullptr;
+	nonodes=0;
+
+}
+
+template <class T>
+bool bintree_list<T>::empty() const{
+	return _root==nullptr;
+}
+
+template <class T>
+typename bintree_list<T>::Nodo bintree_list<T>::root() const{
+	return _root;
+}
+
+template <class T>
+typename bintree_list<T>::Nodo bintree_list<T>::parent(Nodo n) const{
+	return n->getFather();
+}
+
+template <class T>
+typename bintree_list<T>::Nodo bintree_list<T>::sx(Nodo n) const{
+	return n->getLChild();
+}
+
+template <class T>
+typename bintree_list<T>::Nodo bintree_list<T>::dx(Nodo n) const{
+	return n->getRChild();
+}
+
+template <class T>
+bool bintree_list<T>::sx_empty(Nodo n) const{
+	return n->getLChild()==nullptr;
+}
+
+template <class T>
+bool bintree_list<T>::dx_empty(Nodo n) const{
+	return n->getRChild()==nullptr;
+}
+
+template <class T>
+void bintree_list<T>::erase(Nodo n){
+	if (n->father==nullptr){
+		removenode(n);
+		_root=nullptr;
+
+	}else if (n->father->getLChild()==n){
+		removeleft(n->father);
+	}else{
+		removeright(n->father);
+	}
+}
+
+template <class T>
+typename bintree_list<T>::value_type bintree_list<T>::read(Nodo n) const{
+	return n->value;
+}
+
+template <class T>
+void bintree_list<T>::write(Nodo n, value_type v){
+	n->value=v;
+}
+
+template <class T>
+void bintree_list<T>::ins_root(value_type v){
+	if (_root==nullptr){
+		bintreenode<T>* tmp=new bintreenode<T>;
+		tmp->value=v;
+		tmp->level = 0;
+		_root=tmp;
+		nonodes++;
+	}else throw "tree already has a root";
+}
+
+template <class T>
+void bintree_list<T>::ins_sx(Nodo position, value_type val){
+	if(position->Lchild==nullptr){
+		bintreenode<T>* newnode=new bintreenode<T>;
+		newnode->father=position;
+		newnode->value=val;
+		position->Lchild=newnode;
+		newnode->level = this->getLivello(this->parent(newnode))+1;
+		nonodes++;
+	}else throw "a LEFTNODE already exists";
+}
+
+template <class T>
+void bintree_list<T>::ins_dx(Nodo position, value_type val){
+	if(position->Rchild==nullptr){
+		bintreenode<T>* newnode=new bintreenode<T>;
+		newnode->father=position;
+		newnode->value=val;
+		position->Rchild=newnode;
+		newnode->level = this->getLivello(this->parent(newnode))+1;
+		nonodes++;
+	}else throw "a RIGHTNODE already exists";
+
+}
+
+template <class T>
+void bintree_list<T>::removenode(bintreenode<T>* toremove){
+
+	if (toremove!=nullptr){
+		removenode(toremove->Lchild);
+		removenode(toremove->Rchild);
+		delete toremove;
+		nonodes--;
+
+	}
+}
+
+template <class T>
+void bintree_list<T>::removeleft(bintreenode<T>* toremove){
+	if (toremove!=nullptr){
+		removenode(toremove->Lchild);
+		toremove->Lchild=nullptr;
+	}
+}
+
+template <class T>
+void bintree_list<T>::removeright(bintreenode<T>* toremove){
+
+	if (toremove!=nullptr){
+		removenode(toremove->Rchild);
+		toremove->Rchild=nullptr;
+	}
+}
+
+
+template<class T>
+void bintree_list<T>::mirror(bintreenode<T>* n){
+	if(n==nullptr)
+		return;
+	else{
+		bintreenode<T>* tmp;
+
+		mirror(n->Lchild);
+		mirror(n->Rchild);
+
+		tmp=n->Lchild;
+		n->Lchild = n->Rchild;
+		n->Rchild = tmp;
+	}
+
+}
+
+
+template<class T>
+bool bintree_list<T>::is_height_balanced(bintreenode<T>* root, int* height){
+	int lh = 0, rh = 0;
+	int l = 0, r = 0;
+	if(root == NULL){
+		*height = 0;
+		return 1;
+	}
+
+	l = is_height_balanced(root->Lchild, &lh);
+	r = is_height_balanced(root->Rchild, &rh);
+
+	*height = (lh > rh ? lh : rh) +1;
+
+	if(abs(lh-rh) >= 2)
+		return 0;
+	else
+		return l && r;
+}
+
+#endif /* BINTREE_LIST_H_ */
